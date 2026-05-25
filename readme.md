@@ -78,6 +78,7 @@ python -m backend.qdrant.py
 --- 
 
 ## Project structure 🏢
+```text
 simple_rag/
 │
 ├── backend/
@@ -103,3 +104,4 @@ simple_rag/
 ├── docker-compose.yml        
 ├── requirements.txt          
 └── README.md
+```
