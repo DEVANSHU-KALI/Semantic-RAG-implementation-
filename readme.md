@@ -22,14 +22,13 @@ An asynchronous RAG (Retrieval-Augmented Generation) system built with FastAPI, 
 ### 1. Setup Qdrant (Docker)
 - Ensure Docker is running on your system. Use the following command to start the optimized Qdrant container:
 
-- open the terminal and then locate to the docker folder and type this command. 
+- Open the terminal and then locate to the docker folder and type this command. 
 ``` bash
 docker compose up -d
 ```
-
-- if you want to, you can see the qdrantdb ui through the link: http://localhost:6333/dashboard. or you can also go into dockers ui through the dockers application.
+- If you want to, you can see the qdrantdb ui through the link: http://localhost:6333/dashboard. or you can also go into dockers ui through the dockers application.
 - **NOTE**: you need to keep the dockers application 'ON', opened on you desktop, when you run this command, if you close it, it may not work.
-- after you create this container and start it, you can safely close the dockers application if needed, as it runs on a port and the retrieval is going to happen.
+- After you create this container and start it, you can safely close the dockers application if needed, as it runs on a port and the retrieval is going to happen.
 
 ### 2. Add openai api key into the .env
 
@@ -39,11 +38,11 @@ docker compose up -d
 ```bash
 python -m backend.qdrant_db
 ```
-- this creates two collections in the qdrant db, see inside the qdrant_db.py file, you will have a idea about it.
-- wait for a while until you see the message like "collections are ready" in the terminal.
+- This creates two collections in the qdrant db, see inside the qdrant_db.py file, you will have a idea about it.
+- Wait for a while until you see the message like "collections are ready" in the terminal.
 
 ### 5. inject the documents into the collections.
-- I, created two collection instead of one, to make the retrieval more accurate, and I have two types of data inside the 'data' folder.
+- Instead of using one collection, I got two collections, to make the retrieval more accurate, and I also got two different types of data inside the 'data' folder.
 ``` bash
 python -m backend.injest_docuemnts
 ```
