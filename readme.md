@@ -1,4 +1,4 @@
-# Multi-Collection RAG Chatbot
+# Simple-RAG also known as Semantic-Rag
 
 An asynchronous RAG (Retrieval-Augmented Generation) system built with FastAPI, Qdrant, and OpenAI. This system features a custom Query Router to search across multiple document collections dynamically.
 
@@ -105,3 +105,6 @@ simple_rag/
 ├── requirements.txt          
 └── README.md
 ```
+--- 
+
+## All the projects explainations are inside explainations folder, go check it out if you really want to learn instead of just building this project.
