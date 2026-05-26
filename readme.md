@@ -70,6 +70,8 @@ python -m backend.qdrant.py
 
 **NOTE: activate you venv and do this all things, if you installed all the libraries in a venv**
 
+---
+
 ### Everything is done. you can type a query and see the answer there. for example: type "what is Neuromorphic Computing", you can see the answer, now go into the data/ai_papers/paper1.txt, you can see the information in the answer is from this paper and compare your frontend answer and the information here, you see similarity.
 ### It's not a rule to use the same data and collections I used, you can modify them and get you own data, and use them in the project.
 
