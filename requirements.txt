@@ -1,0 +1,16 @@
+# Web & API
+fastapi
+uvicorn
+openai
+streamlit
+httpx
+python-dotenv
+
+# Database
+qdrant-client
+
+# The "Core" for your imports
+langchain
+langchain-experimental
+langchain-huggingface
+sentence-transformers
