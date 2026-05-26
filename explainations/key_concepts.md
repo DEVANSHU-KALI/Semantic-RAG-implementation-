@@ -98,13 +98,52 @@ Instead of letting the LLM return completely unpredictable, messy text responses
 ### 🛡️ Traceability (Citations)
 To solve hallucinations, this system injects a strict metadata tracking pipeline. Every piece of text inside Qdrant carries a payload containing its original `source` file. When chunks are retrieved, their file origins are extracted and pinned directly to the terminal logs alongside the final answer. This creates a full audit trail, letting developers verify exactly which document, page, or paragraph the AI used to formulate its response.
 
-### 8. Evaluation: Future 
-This project doesn't have evaluation yet, as I didn't know about that at starting stage, but if you want to, you can do that too.
-- **Ragas**: The legit framework for evaluating rag pipelines. learn about this and try to implement this, its a interesting concept. lets first know what will you see using this, There are many measure done by ragas but, mainly 4 of them.
-    - Faithfulness: checks if the answer stays faithful to retrieved context or not?. did the hallucination happen?
-        - example: 
-            - If retrieved chunks says: 'Overfitting happens when model memorizes training data'
-            - If Generated answer says: 'Overfitting occurs when model memorizes noise and fails to generalize' 
-                - This is considered good because the answer is supported by the context.
-        - 
- 
+## 8. RAG Evaluation (Ragas vs. DeepEval): Measuring AI Quality
+In traditional software, you write unit tests with exact expected outputs (e.g., `assert x == 5`). But because Large Language Models generate natural language, their outputs are non-deterministic—the same question might get written slightly differently every time. You cannot test an AI using standard code assertions.
+
+To solve this, we use **LLM-as-a-Judge** evaluation frameworks. They use highly capable, impartial models (like GPT-4o) to grade our chatbot's responses based on specialized algorithmic metrics.
+
+``` text
+                   ┌──────────────────────┐
+                   │   RAG TRIAD METRICS  │
+                   └──────────┬───────────┘
+                              │
+        ┌─────────────────────┼─────────────────────┐
+        ▼                     ▼                     ▼
+[Context Precision]   [Context Recall]       [Faithfulness]
+Did we fetch the      Did we fetch all Is the answer 100%
+right chunks?         the needed info?       factually grounded?
+```
+### 📊 Metric Framework 1: Ragas (Retrieval Augmented Generation Assessment)
+Ragas is an open-source framework born out of academic research. It evaluates the component levels of your pipeline using a concept called the **RAG Triad**. It is incredibly strict about mathematical logic.
+* **Faithfulness:** Measures if the generated answer is strictly grounded *only* in the retrieved context. If the model tells the truth but brings in outside knowledge not found in your vector database, Ragas penalizes it for lack of grounding.
+* **Context Recall:** Checks if the retriever managed to pull all the necessary information required to answer the query.
+* **Context Precision:** Evaluates if the highly relevant chunks were ranked at the very top of your database search results or if they were buried under irrelevant "noise."
+
+### 🧪 Metric Framework 2: DeepEval (The Pytest for AI)
+DeepEval is a production-focused alternative built for unit-testing LLMs within continuous integration (CI/CD) pipelines. While Ragas is strict about factual extraction, DeepEval excels at analyzing conversational nuances and conversational flow.
+* **Pragmatic Judgment:** DeepEval breaks your generated text into individual statements and verdicts them separately. It is highly sensitive to subtle misrepresentations or cases where an answer implies something misleading based on the context.
+* **G-Eval Integration:** It allows you to define custom human-like rubrics (e.g., "Grade the politeness of this response from 1-5") and translates those human instructions into programmatic execution scores.
+
+---
+
+## 9. Advanced Tracing & Observability: LangSmith
+When a user types a message into your Streamlit interface, your backend triggers a complex chain reaction: it talks to your Query Router, creates a vector embedding, hits Qdrant, parses the metadata, formats a prompt template, and calls OpenAI. 
+
+If the final answer takes 8 seconds to load, or if the AI hallucinates, looking at a raw terminal log is not enough to find the bug. You need a microscope for your data flow. That is what **LangSmith** does.
+
+```text
+[User Query] ──► [Query Router Span] ──► [Embedding Model Span] ──► [Qdrant Query Span] ──► [LLM Generation Span]
+└─ (Track Exactly where it failed)
+```
+* **Deep Visibility (Spans):** LangSmith hooks into your Python code and records a visual timeline (called traces or spans) of every single internal function call. You can open a dashboard web browser and see exactly how many milliseconds Qdrant took to search vs. how long OpenAI took to stream the text.
+* **Cost and Prompt Debugging:** It displays the exact text prompt sent to the LLM, the exact chunks retrieved, and tracks the dollar cost of the API tokens consumed during that single chat turn.
+* **Why it's essential for production:** If an app fails, LangSmith lets you see precisely which step in the chain broke down—whether the retriever pulled the wrong data or the generator failed to summarize it properly.
+
+### How to use this:
+- You can simply go into the langsmith webpage, create api key and copy that, paste that in the .env inititalizing that api key to the variable LANGCHAIN_API_KEY and in next line add two new things.        
+    - LANGCHAIN_TRACING_V2=true
+    - LANGCHAIN_PROJECT=Hybrid-RAG
+- next go into the rag_pipeline.py script, on the top write: from langsmith import traceable.
+- then just on the above line of the generate_answer function, write: @traceable
+- that's it, now normally have a query and answer with the chatbot, and one see the langsmith page, you will see you a trace there, naming Hybrid-RAG, which is the name we gave in the .env file.
