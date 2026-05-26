@@ -97,3 +97,14 @@ Instead of letting the LLM return completely unpredictable, messy text responses
 
 ### 🛡️ Traceability (Citations)
 To solve hallucinations, this system injects a strict metadata tracking pipeline. Every piece of text inside Qdrant carries a payload containing its original `source` file. When chunks are retrieved, their file origins are extracted and pinned directly to the terminal logs alongside the final answer. This creates a full audit trail, letting developers verify exactly which document, page, or paragraph the AI used to formulate its response.
+
+### 8. Evaluation: Future 
+This project doesn't have evaluation yet, as I didn't know about that at starting stage, but if you want to, you can do that too.
+- **Ragas**: The legit framework for evaluating rag pipelines. learn about this and try to implement this, its a interesting concept. lets first know what will you see using this, There are many measure done by ragas but, mainly 4 of them.
+    - Faithfulness: checks if the answer stays faithful to retrieved context or not?. did the hallucination happen?
+        - example: 
+            - If retrieved chunks says: 'Overfitting happens when model memorizes training data'
+            - If Generated answer says: 'Overfitting occurs when model memorizes noise and fails to generalize' 
+                - This is considered good because the answer is supported by the context.
+        - 
+ 
