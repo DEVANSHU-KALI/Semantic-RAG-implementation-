@@ -1,4 +1,4 @@
-# Simple-RAG also known as Semantic-Rag
+# Semantic-Rag also known as Simple-RAG
 
 An asynchronous RAG (Retrieval-Augmented Generation) system built with FastAPI, Qdrant, and OpenAI. This system features a custom Query Router to search across multiple document collections dynamically.
 
