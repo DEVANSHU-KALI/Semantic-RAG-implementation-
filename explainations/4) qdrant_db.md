@@ -17,3 +17,8 @@
 
 - at the end, we print collection is read.
 
+--- 
+
+### execution part:
+- after starting your qdrant database container, come into the ide and run this script, which will create the collections and then print the message.
+- open your qdrant dashboard and see there, you will see both of this there/
