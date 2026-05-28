@@ -11,4 +11,9 @@
 
 - the next two lines: 6 and 7 will check whether there are any collections existing or not, a loop through the collections.
 
-- collection creation part
+- collection creation part:
+    - code for both is same
+        - we check if the collection names is inside the existing_collections list or not, and then create this collections there
+
+- at the end, we print collection is read.
+
