@@ -1,0 +1,1 @@
+## This script is meant to send data into the qdrant database.
