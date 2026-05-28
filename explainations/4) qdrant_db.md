@@ -21,4 +21,4 @@
 
 ### execution part:
 - after starting your qdrant database container, come into the ide and run this script, which will create the collections and then print the message.
-- open your qdrant dashboard and see there, you will see both of this there/
+- and if you dont know how to start the container and use it, see the key_concepts.md file, in the last, its mentioned neatly.
