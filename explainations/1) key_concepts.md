@@ -140,6 +140,8 @@ If the final answer takes 8 seconds to load, or if the AI hallucinates, looking 
 * **Cost and Prompt Debugging:** It displays the exact text prompt sent to the LLM, the exact chunks retrieved, and tracks the dollar cost of the API tokens consumed during that single chat turn.
 * **Why it's essential for production:** If an app fails, LangSmith lets you see precisely which step in the chain broke down—whether the retriever pulled the wrong data or the generator failed to summarize it properly.
 
+--- 
+
 ### How to use this:
 - You can simply go into the langsmith webpage, create api key and copy that, paste that in the .env inititalizing that api key to the variable LANGCHAIN_API_KEY and in next line add two new things.        
     - LANGCHAIN_TRACING_V2=true
@@ -147,3 +149,13 @@ If the final answer takes 8 seconds to load, or if the AI hallucinates, looking 
 - next go into the rag_pipeline.py script, on the top write: from langsmith import traceable.
 - then just on the above line of the generate_answer function, write: @traceable
 - that's it, now normally have a query and answer with the chatbot, and one see the langsmith page, you will see you a trace there, naming Hybrid-RAG, which is the name we gave in the .env file.
+
+---
+
+### small part to explain about docker here, if you have idea about containers and all, skip this:
+- how to start a container: after pointing you terminal to docker directory:
+    - which may look something like: (.venv) PS D:\projects\simple_rag\docker> 
+    - run the below command
+```bash
+docker compose up -d 
+```
