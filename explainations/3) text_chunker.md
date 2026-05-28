@@ -8,3 +8,4 @@
 - the main thing to know is, semantic chunker comes from langchain, so its obvious that it expects langchian's embedding format, where you get .embed_document, 
 .embed_query, and on the other hand the model follows sentence-transformer embedding format, which only has .embed_text for both query and doc, so we wrapped our embedding model with a langchian embedding model wrapper. 
 - and there is also a reason why separating both, even they do the same work, .embeb_document or .embed_chunk, literally do the same thing as .embed_text does, but the answer is more advance level, which we dont want to explore right now.
+
