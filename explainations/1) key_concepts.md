@@ -159,3 +159,10 @@ If the final answer takes 8 seconds to load, or if the AI hallucinates, looking 
 ```bash
 docker compose up -d 
 ```
+- how to close container:
+```bash
+docker compose down
+```
+- NOTE: when you first time star the container, it takes time, as we are installing things. after that its normal, and starts fast.
+    - these are two simple and main commands to know.
+    - optional commands would be to check all the containers running, the command for it is simple: docker ps
