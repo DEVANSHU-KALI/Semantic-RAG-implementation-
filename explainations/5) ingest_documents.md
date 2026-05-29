@@ -40,3 +40,9 @@
 
 - upsert is the method used to insert data into the qdrant client, and here we are inserting the points to specific collection.
 - a simple message in terminal to tell, injestion is completed.
+
+- now the main part which is related to python: 
+    - the running part: when you run this code, you take each data one time, as we used two collections.
+    - one collection and its folder path goes into the function at one time each.
+    - if we dont write in this way, we would've got a large code, where we needed to write specific code for both the collections.
+    
