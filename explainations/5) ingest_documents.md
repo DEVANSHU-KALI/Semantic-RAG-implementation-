@@ -24,3 +24,19 @@
 - a small message to print in the terminal
     - a example chunk to print, so that we can see how the chunk looks
     - and id of the chunks.
+
+- convert the chunks into embeddings.
+- print the embeddings length in terminal, which will be 386 as we used that model.
+
+- now related to points creation:
+- list to store all the points and later insert that points to specific collection in qdrant database.
+    - loop through length of documents
+        - for each point, we are getting:
+            - id
+            - embeddings
+            - payload:
+                - chunk text
+                - source (from which file did the chunk come)
+
+- upsert is the method used to insert data into the qdrant client, and here we are inserting the points to specific collection.
+- a simple message in terminal to tell, injestion is completed.
