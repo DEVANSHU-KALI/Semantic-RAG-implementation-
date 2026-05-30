@@ -10,7 +10,7 @@
     - so we import this to create some point structure according our project.
 
 ### connect to qdrant client
-- as our qdrant is running in that locahost port, we initialize the client and connect to it.
+- as our qdrant is running in that localhost port, we initialize the client and connect to it.
 
 ### main function:
 - this functions expects two parameters: folder path (from where to take data), and collection name (into which collection the data should be stored)
@@ -44,5 +44,4 @@
 - now the main part which is related to python: 
     - the running part: when you run this code, you take each data one time, as we used two collections.
     - one collection and its folder path goes into the function at one time each.
-    - if we dont write in this way, we would've got a large code, where we needed to write specific code for both the collections.
-    
+    - if we don't write in this way, we would've got a large code, where we needed to write specific code for both the collections.
