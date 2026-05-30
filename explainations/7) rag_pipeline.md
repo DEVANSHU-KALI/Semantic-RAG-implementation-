@@ -12,3 +12,9 @@
 - import the retrieve_chunks function which gets the relevant chunks for the query. Go and see the md file related to the new_retriever script to understand this more clearly.
 
 
+### initializing the open ai client
+- asyncopenai is used as client here, to get the model
+
+### now the generate_answer function: which expects query as a input parameter
+- get the collection name first.
+- send the query and collection to the retrieve_chunks function which returns the relevant chunks.  
