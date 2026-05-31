@@ -1,0 +1,17 @@
+# Ignore all python cache folders anywhere in the project
+**/__pycache__/
+**/*.pyc
+
+# Ignore the virtual environment
+.venv/
+venv/
+env/
+
+# Ignore secrets
+.env
+
+# Ignore the database storage
+docker/qdrant_storage/
+
+# Ignore project metadata
+*.egg-info/
