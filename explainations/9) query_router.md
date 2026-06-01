@@ -1,0 +1,1 @@
+## this script is meant to explain the classification of collection
