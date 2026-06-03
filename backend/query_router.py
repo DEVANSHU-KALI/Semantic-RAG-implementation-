@@ -2,9 +2,23 @@ import os
 from openai import AsyncOpenAI
 from dotenv import load_dotenv
 
+from pydantic import BaseModel, Field
+from typing import Literal
+
 load_dotenv()
 
 client = AsyncOpenAI() 
+
+# REFACTOR NOTE: Enforcing OpenAI Structured Outputs using Pydantic.
+# Free-text classification is highly fragile; the LLM can output casing variants 
+# (e.g. "AI"), conversational wrappers (e.g. "The category is: ai"), or Markdown.
+# Downstream retriever collection mapping requires exactly "ai" or "langchain_docs".
+# By passing a Pydantic schema and calling client.beta.chat.completions.parse, 
+# the API mathematically restricts tokens to matching our strict schema structure.
+class QueryClassification(BaseModel):
+    category: Literal["ai", "langchain_docs"] = Field(
+        description="The classification category of the query: 'ai' or 'langchain_docs'."
+    )
 
 async def route_query(query: str) -> str:
     
@@ -17,17 +31,17 @@ async def route_query(query: str) -> str:
     description: Queries related to langchain documentation, usage, and related topics.
 
     Query: {query}
-
-    classify into one category, either "ai" or "langchain_docs".
     """
 
-    # Standard, blocking call
-    response = await client.chat.completions.create(
+    # Call the parsing-native beta completions endpoint, passing the Pydantic schema
+    response = await client.beta.chat.completions.parse(
         model="gpt-4o-mini",
-        messages=[{"role":"user","content":prompt}]
+        messages=[{"role":"user","content":prompt}],
+        response_format=QueryClassification,
     )
 
-    return response.choices[0].message.content.strip()
+    # Safely return the strongly-typed schema value
+    return response.choices[0].message.parsed.category
 
 
 # past version of query_router.py.
