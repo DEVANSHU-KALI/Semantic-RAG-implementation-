@@ -1,45 +1,59 @@
-## The main backend file: which accepts the request from frontend, triggers the pipeline, gets the answer and sends back to the frontend.
+## ⚡ main.py: FastAPI Server and Schema Validation
 
-### imports:
-- as we use the fastapi as backend, we import that.
-- now a import concept of fasatapi comes here, the pydantic, used for data validation.
-    - this concept is like a bouncer for backend, which only allows specific format of things from the frontend.
-    - how it works:
-        - from pydantic we import base model, which acts as a bouncer for us.
-        - we then customize add whatever things we want to have some rule to enter, we initialize that.
-        - as we needed prompt to be strictly a string, we used that.
-        - later we point our request to the class, so that the request comes thorough the class for verification. 
+This document breaks down the API endpoint implementation in `backend/main.py` section-by-section.
 
-- import the generate answer function from the rag_pipeline.py.
+---
 
-### fastapi app initialization:
-- we initialize the app and give it a title
+## 1. Code Walkthrough (Line-by-Line)
 
-### pydantic class:
-- this can also called schema.
-- we create data validation for prompt (query) to be a string.
-- when interviewer asks, how did you validate you data, you can say, i used the pydantic model to validate my data coming from the frontend, as i only send query from the frontend, i strictly gave it to be string.
+The backend server is responsible for exposing endpoints to receive requests from the frontend, call the RAG pipeline, and return JSON responses.
 
-### endpoint.
-- if you have a bit of knowledge about fastapi, you would know what a endpoint is. in simple words is a room in a building, which has some specific work to do.
-- as the frontend is requesting some output from the backend, we use the post method (another main concept of fastapi), and keep the endpoint as chat.
-- create the function which takes request from the frontend.
-- as the request contains some prompt, which is the query, we send that to the generate_answer function, which is inside the rag_pipeline script. result variable stores the answer given by the function, and finally we get the result and store that inside a dictionary as a value for the key answer. later this is picked up by the frontend.
-
-### flow:
-
-```text
-frontend sends request
-        |
-        v
-request hits the chat endpoint
-        |
-        V
-the request goes through the pydantic class to get verified
-        |
-        v
-generate answer function is triggered and the result of it is stored inside teh result variable.
-        |
-        v
-result is packed inside a dictionary to get picked by frontend
+### Part A: Imports
+```python
+from fastapi import FastAPI
+from pydantic import BaseModel
+from .rag_pipeline import generate_answer
 ```
+*   **What is happening in the code:** We import the `FastAPI` framework, the `BaseModel` data validation class from Pydantic, and the `generate_answer` function from our pipeline.
+
+### Part B: App Setup
+```python
+app = FastAPI(title="RAG Chatbot API")
+```
+*   **What is happening in the code:** We instantiate the `FastAPI` application server and set its title. This initializes the server routing and automatically sets up interactive documentation endpoints (e.g. `/docs` or `/redoc`).
+
+### Part C: Defining Request Schemas
+```python
+class QueryRequest(BaseModel):
+    prompt: str
+```
+*   **What is happening in the code:** We declare a class `QueryRequest` that inherits from Pydantic's `BaseModel`. We define a single field `prompt` of type `str`.
+*   **Why we do it:** This acts as a validator (a filter that validates request body structure and data types). If a request comes in containing a different format or missing fields, FastAPI will automatically reject it and return an error before executing any pipeline logic.
+
+### Part D: POST Route Definition & Endpoint Handler
+```python
+@app.post("/chat")
+async def chat_endpoint(request: QueryRequest):
+    result = await generate_answer(request.prompt)
+    return {"answer": result}
+```
+*   **What is happening in the code:**
+    1.  We define an HTTP POST route at the path `/chat`.
+    2.  The handler function `chat_endpoint` is declared as an asynchronous function (`async def`) and accepts a parameter `request` matching our `QueryRequest` model.
+    3.  We call `await generate_answer(request.prompt)`. This triggers our RAG pipeline, pausing execution to wait for OpenAI and Qdrant database queries while releasing the thread to handle other incoming network requests.
+    4.  We return a Python dictionary `{"answer": result}`, which FastAPI automatically serializes (converts) into a JSON response body.
+
+---
+
+## 2. Deep Technical Concepts
+
+*   **ASGI (Asynchronous Server Gateway Interface):** A interface standard for asynchronous web servers. Unlike traditional WSGI (Web Server Gateway Interface) standards (used in Flask), ASGI supports non-blocking I/O operations and asynchronous endpoints.
+*   **HTTP POST Method:** POST is used to send data in the request body to the server. Unlike GET requests, which attach data directly to the URL string, POST requests can handle large queries securely and support complex JSON payloads.
+
+---
+
+## 3. Architectural Choices and Alternatives
+
+### Why FastAPI instead of Flask?
+*   **FastAPI:** Built on ASGI, natively asynchronous, provides automatic validation via Pydantic, and generates documentation (Swagger) out of the box.
+*   **Flask:** Simple and lightweight, but synchronous (blocking) by default. Implementing async database searches or streaming LLM completions in Flask requires additional threading structures, making it less suitable for high-concurrency AI applications.

@@ -1,47 +1,107 @@
-## This script is meant to inject data into the qdrant database.
+# 📥 ingest_documents.py: Parsing, Vector Ingestion, and Batch Uploads
 
-### imports:
-- import os to get the data file
-- importing embedding model from the embedding model script
-- import the text_splitter function from the text_chunker.py script
-- now the main part:
-    - importing the normal qdrant client, because this script is not a part of rag pipeline, this comes under pre rag phase, where you just run once to inject your data into the qdrant file, and its just a simple i/o bound operation, we don't need async version of it.
-- pointstruct: now as we discussed in the key concept, related to qdrant, points are the way of storing data in the qdrant database, where each point mainly contains, id, vector, payload (text, source and more if wanted).
-    - so we import this to create some point structure according our project.
+This document breaks down the document ingestion script in `backend/ingest_documents.py` section-by-section.
 
-### connect to qdrant client
-- as our qdrant is running in that localhost port, we initialize the client and connect to it.
+---
 
-### main function:
-- this functions expects two parameters: folder path (from where to take data), and collection name (into which collection the data should be stored)
+## 1. Code Walkthrough (Line-by-Line)
 
-- we create two different lists, which store documents(chunks) and ids
-- a counter variable to have a count of chunks, as we need ids
+The ingestion script is responsible for reading local documents, chunking them, vectorizing them, and inserting them into the Qdrant database.
 
-- for loop to loop over the folder path to get all the text files.
-- read them, create chunks (documents), and ids. increment the counter by 1.
+### Part A: Imports & Client Setup
+```python
+import os
+from .embedding_model import embedding_model
+from .text_chunker import text_splitter
+from qdrant_client import QdrantClient
+from qdrant_client.models import PointStruct
 
-- a small message to print in the terminal
-    - a example chunk to print, so that we can see how the chunk looks
-    - and id of the chunks.
+# Connect to Qdrant
+client = QdrantClient(host="localhost", port=6333)
+```
+*   **What is happening in the code:** We import libraries for file navigation, model encoding, chunking, and database operations. We instantiate `QdrantClient` synchronously to connect to the database on port 6333.
 
-- convert the chunks into embeddings.
-- print the embeddings length in terminal, which will be 386 as we used that model.
+### Part B: Reading Files & Semantic Chunking
+```python
+def ingest_documents(folder_path: str, collection_name: str):
+    # REFACTOR NOTE: Introduced 'sources' list to map metadata correctly.
+    documents = []
+    ids = []
+    sources = []
+    counter = 0
 
-- now related to points creation:
-- list to store all the points and later insert that points to specific collection in qdrant database.
-    - loop through length of documents
-        - for each point, we are getting:
-            - id
-            - embeddings
-            - payload:
-                - chunk text
-                - source (from which file did the chunk come)
+    for filename in os.listdir(folder_path):
+        if not filename.endswith(".txt"):
+            continue
 
-- upsert is the method used to insert data into the qdrant client, and here we are inserting the points to specific collection.
-- a simple message in terminal to tell, injestion is completed.
+        file_path = os.path.join(folder_path, filename)
+        with open(file_path, "r", encoding="utf-8") as file:
+            text = file.read()
 
-- now the main part which is related to python: 
-    - the running part: when you run this code, you take each data one time, as we used two collections.
-    - one collection and its folder path goes into the function at one time each.
-    - if we don't write in this way, we would've got a large code, where we needed to write specific code for both the collections.
+        chunks = text_splitter.create_documents([text])
+        for chunk in chunks:
+            documents.append(chunk.page_content)
+            ids.append(counter)
+            sources.append(filename) # Dynamic source file mapping
+            counter += 1
+```
+*   **What is happening in the code:**
+    1.  We define `ingest_documents` taking a folder path and collection name.
+    2.  We initialize empty lists for chunk text (`documents`), IDs (`ids`), and file names (`sources`).
+    3.  We loop through all `.txt` files in the directory, open them, and read their contents.
+    4.  We call `text_splitter.create_documents([text])` to split the text into semantic chunks.
+    5.  We loop through each chunk and append the text, a unique numeric ID, and the file name to their respective lists.
+*   **Why we do it (The Fix):** The original script did not use a `sources` list. It referenced the outer loop's `filename` variable directly in payload creation, which meant all chunks were incorrectly tagged with the name of the *last* processed file. Collecting filenames in `sources` resolves this bug.
+
+### Part C: Vector Encoding and Point Struct Construction
+```python
+    # Convert chunks to embeddings
+    embeddings = embedding_model.encode(documents)
+
+    points = []
+    for i in range(len(documents)):
+        points.append(
+            PointStruct(
+                id=ids[i],
+                vector=embeddings[i].tolist(),
+                payload={
+                    "text": documents[i],
+                    "source": sources[i] # Fixed source tag binding
+                }
+            )
+        )
+```
+*   **What is happening in the code:**
+    1.  We pass our collected text chunks (`documents`) to the embedding model to generate vectors in a single batch.
+    2.  We initialize an empty list `points`.
+    3.  We loop through all chunks, creating a `PointStruct` for each. We convert the NumPy vector to a standard list using `.tolist()` and bind the text and its source file name to the metadata payload.
+
+### Part D: Database Upsert & Execution
+```python
+    # Upload to Qdrant
+    client.upsert(
+        collection_name=collection_name,
+        points=points
+    )
+
+if __name__ == "__main__":
+    ingest_documents("data/ai_papers", "ai_research_papers")
+    ingest_documents("data/langchain_docs", "langchain_docs")
+```
+*   **What is happening in the code:**
+    1.  We call `client.upsert` to write all point objects to the specified collection in one request.
+    2.  In the `__name__ == "__main__"` block, we execute this ingestion for both of our collections.
+
+---
+
+## 2. Deep Technical Concepts
+
+*   **Point:** The basic data unit stored in Qdrant collections. It consists of an ID, a vector, and a payload.
+*   **Payload:** A dictionary of metadata (such as original text, source file paths, or categories) associated with a vector point, allowing for metadata filtering during searches.
+*   **Upsert:** A database operation that inserts a new record if it does not exist, or updates it if the ID matches. This makes the ingestion script idempotent (runnable multiple times without duplicating data).
+
+---
+
+## 3. Architectural Choices and Alternatives
+
+*   **Batch Processing:** Instead of uploading points one by one, we batch them in the `points` list and upload them in a single call. This reduces network overhead and speeds up the ingestion process.

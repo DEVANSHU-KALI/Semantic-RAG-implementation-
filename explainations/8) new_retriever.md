@@ -1,23 +1,73 @@
-## a very important script which gets all the relevant chunks from the database.
+## 🔍 new_retriever.py: Async Retrieval & Vector Space Matching
 
-### first the imports
-- Importing the Qdrant client.
-- Importing the embedding model from the embedding_model script, which is used to convert queries into vector embeddings.
+This document explains `backend/new_retriever.py` section-by-section to show how vector similarity searches are handled.
 
-### Database client initialization
-- Since the Qdrant database is running locally on port 6333, we connect to it using AsyncQdrantClient.
+---
 
-### Now the retrieve chunks function:
-- This function takes a query and a collection name as input.
-- First, the query is converted into embeddings using the embedding model. The embedding model returns a NumPy array. Since Qdrant expects the vector in a standard Python list format, we convert it using .tolist() before sending it to the database.
-- This script is used by other scripts in the project. The collection name is provided by the query_router script, which classifies the user query and returns a category such as `ai` or `langchain_docs`. Based on this output, the appropriate collection (for example, `ai_research_papers` or `langchain_docs`) is searched.
-- The collection name and query vector are sent to Qdrant, which performs a similarity search and returns the most relevant chunks. `limit=3` means only the top 3 matching chunks are retrieved.
-- Since Qdrant stores data as points, we loop through the returned points and extract the required payload information, such as the chunk text and its source. These details are stored in a results list.
-- Finally, the results list is returned and used by other scripts in the RAG pipeline.
-- If this script feels difficult to understand on its own, don't worry. Its role becomes much clearer when we see how it is used by other scripts in the project and follow the complete flow of data through the system.
-- a small point to mention here in the line 27  
+## 1. Code Walkthrough (Line-by-Line)
 
-```py
-"source": point.payload.get("source", "unknown")
-``` 
-which actually means that if there is a source return the source name and if there's nothing written unknown which is a safety measure we used in this project instead of returning an error if there's no source for that chunk of data
+The retriever script is responsible for querying our Qdrant vector database.
+
+### Part A: Imports & Client Setup
+```python
+from qdrant_client import AsyncQdrantClient
+from .embedding_model import embedding_model
+
+client = AsyncQdrantClient(host="localhost", port=6333)
+```
+*   **What is happening in the code:** We import Qdrant's async client and our local embedding model. We instantiate the client pointing to localhost on port 6333.
+
+### Part B: Query Vectorization and Collection Mapping
+```python
+async def retrieve_chunks(query: str, collection_name: str):
+    query_vector = embedding_model.encode(query).tolist()
+
+    if collection_name == "ai":
+        collection = "ai_research_papers"
+    else:
+        collection = "langchain_docs"
+```
+*   **What is happening in the code:**
+    1.  We define `retrieve_chunks` as an asynchronous function.
+    2.  We pass the text query to our model `embedding_model.encode(query)` to convert it to a vector. We call `.tolist()` to convert the NumPy array into a standard Python list of floating-point numbers.
+    3.  We check if `collection_name` equals `"ai"`. If it does, we route the search to the `"ai_research_papers"` collection; otherwise, we route it to the `"langchain_docs"` collection.
+
+### Part C: Database Vector Search
+```python
+    results = await client.query_points(
+        collection_name=collection,
+        query=query_vector,
+        limit=3
+    )
+```
+*   **What is happening in the code:** We query the database using `client.query_points`. We pass the mapped collection name, the query vector, and a search limit parameter (`limit=3`). This executes a nearest-neighbor vector search.
+
+### Part D: Parsing database points & safety defaults
+```python
+    results_list = []
+    for point in results.points:
+        results_list.append({
+            "text": point.payload["text"],
+            "source": point.payload.get("source", "unknown")
+        })
+    return results_list
+```
+*   **What is happening in the code:**
+    1.  We iterate through the returned points list.
+    2.  We extract the text content (`point.payload["text"]`) and the source filename (`point.payload.get("source", "unknown")`).
+    3.  **Safety Check:** Using `.get("source", "unknown")` ensures that if a point payload is missing a source file key, the system defaults to `"unknown"` instead of raising a `KeyError` and crashing the server.
+
+---
+
+## 2. Deep Technical Concepts
+
+*   **Vector Similarity Search:** The process of locating the database vectors closest to a query vector. The database calculates the geometric distance between vectors to identify semantically related text chunks.
+*   **Top-K Retrieval (limit=3):** Specifies the number of nearest vectors to return. Setting this parameter requires balancing detail against cost: retrieving too many chunks (e.g. 10) can exceed the LLM's context window and increase API costs, while retrieving too few (e.g. 1) might miss crucial context.
+
+---
+
+## 3. Architectural Choices and Alternatives
+
+### Why use direct Qdrant APIs instead of LangChain abstractions?
+*   **Native Qdrant APIs:** Lightweight, execute faster, and provide direct access to database configurations and connection lifecycle controls.
+*   **Alternatives (LangChain VectorStore Wrappers):** Standard LangChain wrappers (like `Qdrant.from_existing_collection()`) simplify initial prototyping but add abstraction overhead, making debugging database connections and tracking performance issues harder.
