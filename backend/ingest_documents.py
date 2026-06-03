@@ -13,8 +13,14 @@ client = QdrantClient(host="localhost", port=6333)
 
 def ingest_documents(folder_path: str, collection_name: str):
 
+    # REFACTOR NOTE: Introduced a parallel tracking list 'sources' for chunk mapping.
+    # The previous code referenced the loop's 'filename' variable directly in payload creation (outside the loop).
+    # Since 'filename' was outside the file-reading loop, it retained the name of the LAST file processed.
+    # Consequently, every single chunk in the collection was metadata-tagged with the last file's name.
+    # Appending 'filename' for each chunk and indexing 'sources[i]' ensures correct metadata lineage.
     documents = []
     ids = []
+    sources = []
 
     counter = 0
 
@@ -34,6 +40,7 @@ def ingest_documents(folder_path: str, collection_name: str):
 
             documents.append(chunk.page_content)
             ids.append(counter)
+            sources.append(filename)
 
             counter += 1
 
@@ -64,7 +71,7 @@ def ingest_documents(folder_path: str, collection_name: str):
                 vector=embeddings[i].tolist(),
                 payload={
                     "text": documents[i],
-                    "source": filename
+                    "source": sources[i]  # Correctly maps individual chunk source file
                 }
             )
         )
