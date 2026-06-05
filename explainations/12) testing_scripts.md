@@ -98,3 +98,4 @@ plt.show()
 ### Why use PCA for visualization?
 *   **PCA (Used Here):** Fast, deterministic, and preserves global distances between points.
 *   **Alternatives (t-SNE or UMAP):** Advanced non-linear techniques that excel at capturing local clusters in complex datasets. However, they are non-deterministic, computationally expensive, and can distort global relationships, making them less suitable for simple sanity checks.
+- this is optional thing to go with, you can visualize or not. but you get a understanding on it.
