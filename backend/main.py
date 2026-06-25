@@ -12,4 +12,4 @@ async def chat_endpoint(request: QueryRequest):
     
     result = await generate_answer(request.prompt)
 
-    return {"answer": result}
+    return {"answer": result["answer"]}
